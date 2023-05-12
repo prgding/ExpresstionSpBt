@@ -16,13 +16,11 @@ public class ExpSerImpl implements ExpSer {
     public static Map<String, String> qaMap = new HashMap<>();
     private static Map<String, Boolean> askedMap = new HashMap<>();
     private int count = 1;
-    private static String strange = "";
-
 
     static {
         // 读取txt文件内容、分割qa并存入Map
         try {
-            File file1 = ResourceUtils.getFile("classpath:input-front50.txt");
+            File file1 = ResourceUtils.getFile("classpath:full.txt");
             Scanner scanner = new Scanner(file1);
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine();
@@ -46,19 +44,30 @@ public class ExpSerImpl implements ExpSer {
         // 创建一个随机数生成器
         Random random = new Random();
         // 生成一个随机数，获取对应的key和value
-        String key = getRandomUnaskedKey(qaMap, askedMap, random, strange);
+        String key = getRandomUnaskedKey(askedMap, random);
+        if (key.equals("AllAsked")) {
+            return "全部提问过了，重新开始吧";
+        }
         askedMap.put(key, true);
         // 输出题目
         return key + " [" + count + "]";
     }
 
+    // 获取一个尚未被提问过的key
+    private static String getRandomUnaskedKey(Map<String, Boolean> askedMap, Random random) {
+        String[] unaskedKeys = askedMap.keySet().stream().filter(key -> !askedMap.get(key)).toArray(String[]::new);
+        if (unaskedKeys.length > 0) {
+            return unaskedKeys[random.nextInt(unaskedKeys.length)];
+        } else {
+            // 如果所有的key都已经被提问过，则重新设置所有key的标记，并返回一个随机的key
+            return "AllAsked";
+        }
+    }
+
     @Override
     public String checkAnswer(String question, String input) {
         String key = question.split(" \\[")[0];
-        if (input.equals(qaMap.get(key))) {
-            count++;
-            return "正确";
-        } else return "错误";
+        return qaMap.get(key);
     }
 
     @Override
@@ -97,17 +106,5 @@ public class ExpSerImpl implements ExpSer {
             askedMap.put(key, false);
         }
         return "重置提问成功";
-    }
-
-    // 获取一个尚未被提问过的key
-    private static String getRandomUnaskedKey(Map<String, String> qaMap, Map<String, Boolean> askedMap, Random random
-            , String strange) {
-        String[] unaskedKeys = askedMap.keySet().stream().filter(key -> !askedMap.get(key)).toArray(String[]::new);
-        if (unaskedKeys.length > 0) {
-            return unaskedKeys[random.nextInt(unaskedKeys.length)];
-        } else {
-            // 如果所有的key都已经被提问过，则重新设置所有key的标记，并返回一个随机的key
-            return "全部提问过了，重新开始吧";
-        }
     }
 }
